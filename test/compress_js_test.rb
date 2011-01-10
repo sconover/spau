@@ -46,4 +46,44 @@ describe "js compression" do
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
   end
+  
+  it "compresses js code from script tags" do
+    write_file("/tmp/test.html", <<-HTML)
+      <html>
+        <head>
+          <script>
+            function addNumbers(x, y) {
+              var OH_HEY_IM_NOT_USED = 1;
+              return x + y;
+            }
+          </script>
+          
+          <script>
+            function subtractNumbers(y, x) {
+              return y - x;
+            }
+          </script>
+
+          <script>
+            function doCalculations() {
+              return subtractNumbers(addNumbers(7, 5), 3)
+            }
+          </script>
+        </head>
+        <body>
+          <b>Hi I'm Html</b>
+        <body>
+      </html>
+    HTML
+    
+    result = SPAU::compress_and_inline("/tmp/test.html", "/tmp")
+
+    assert{ result.include?("addNumbers") }
+    assert{ result.include?("subtractNumbers") }
+    deny{ result.include?("OH_HEY_IM_NOT_USED") }
+    
+    assert{ result.include?("<b>Hi I'm Html</b>") }
+
+    assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
+  end
 end
