@@ -41,6 +41,7 @@ module SPAU
     
     all_js_compressed = File.read("/tmp/temp_all_min.js")
     
+    file_contents.gsub!(SINGLE_LINE_SCRIPT_REGEX, "")
     file_contents.gsub!(MULTI_LINE_SCRIPT_REGEX, "")
     file_contents.sub!("</head>", "<script>\n#{all_js_compressed}\n</script>\n</head>")
     

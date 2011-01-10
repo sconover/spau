@@ -20,6 +20,7 @@ describe "js compression" do
       <html>
         <head>
           <script src="add.js"></script>
+          <meta>A</meta>
           <script src="subtract.js"></script>
           <script>
             function doCalculations() {
@@ -42,6 +43,7 @@ describe "js compression" do
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
+    assert{ result.include?("<meta>A</meta>") }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
@@ -57,7 +59,7 @@ describe "js compression" do
               return x + y;
             }
           </script>
-          
+          <meta>A</meta>
           <script>
             function subtractNumbers(y, x) {
               return y - x;
@@ -82,6 +84,7 @@ describe "js compression" do
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
+    assert{ result.include?("<meta>A</meta>") }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
