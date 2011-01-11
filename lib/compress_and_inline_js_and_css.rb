@@ -5,11 +5,15 @@ module SPAU
   SINGLE_LINE_SCRIPT_REGEX = /(<script(.*)?<\/script>)/
   MULTI_LINE_SCRIPT_REGEX = /(<script(.*)?<\/script>)/m
   
-  def self.compress_and_inline(html_file, base_dir=".")
-    compress_and_inline_js(html, base_dir)
+  def self.compress_and_inline_js_and_css!(html_file, base_dir=".")
+    File.open(html_file + ".tmp", "w"){|f|f << compress_and_inline_js(html_file, base_dir)}
+    FileUtils.mv(html_file + ".tmp", html_file)
+    
+    File.open(html_file + ".tmp", "w"){|f|f << compress_and_inline_css(html_file, base_dir)}
+    FileUtils.mv(html_file + ".tmp", html_file)
   end
   
-  def self.compress_and_inline_js(html_file, base_dir=".")
+  def self.compress_and_inline_js(html_file, base_dir=".", files_to_exclude=[])
     html = File.read(html_file)
     compress_and_inline_type(
       :type => "js",
@@ -19,11 +23,12 @@ module SPAU
       :multi_line_regex => /(<script(.*?)<\/script>)/m,
       :tag_begin_regex => /<script(.*?)>/,
       :tag_end_regex => /<\/script>/,
-      :file_tag_regex => /<script(.*?)<\/script>/,
+      :file_tag_regex => /<script.*? src(.*?)<\/script>/,
       :file_regex => /src=/,
       :file_capture_regex => /src=["'](.*?)["']/,
       :replacement_begin_tag => "<script>",
-      :replacement_end_tag => "</script>"
+      :replacement_end_tag => "</script>",
+      :files_to_exclude => files_to_exclude
     )
   end
   
@@ -41,7 +46,8 @@ module SPAU
       :file_regex => /href=/,
       :file_capture_regex => /href=["'](.*?)["']/,
       :replacement_begin_tag => "<style type='text/css'>",
-      :replacement_end_tag => "</style>"
+      :replacement_end_tag => "</style>",
+      :files_to_exclude => []
     )
   end
   
@@ -63,8 +69,10 @@ module SPAU
 
           if (whole_script_tag.match(/^(.*)?>/)[0].strip =~ args[:file_regex])
             relative_file_path = whole_script_tag.match(args[:file_capture_regex]).captures.first
-            all_str << "\n\n"
-            all_str << File.read(relative_file_path)
+            unless (args[:files_to_exclude].include?(relative_file_path))
+              all_str << "\n\n"
+              all_str << File.read(relative_file_path)
+            end
           else
             all_str << "\n\n"
             all_str << inner.gsub(args[:tag_begin_regex], "").gsub(args[:tag_end_regex], "")
@@ -79,10 +87,19 @@ module SPAU
     compress("/tmp/temp_all.#{args[:type]}", "/tmp/temp_all_min.#{args[:type]}", args[:type])
     
     all_str_compressed = File.read("/tmp/temp_all_min.#{args[:type]}")
+
+
+    result = args[:html].gsub(args[:file_tag_regex]) do |file_tag_match|
+      relative_file_path = file_tag_match.match(args[:file_capture_regex]).captures.first
+      if args[:files_to_exclude].include?(relative_file_path)
+        file_tag_match
+      else
+        ""
+      end
+    end
     
-    result = args[:html].gsub(args[:single_line_regex], "")
-    result.gsub!(args[:multi_line_regex], "")
-    result.gsub!(args[:file_tag_regex], "")
+    result.gsub!(args[:single_line_regex]) {|str| str.match(args[:file_capture_regex]) ? str : ""}
+    result.gsub!(args[:multi_line_regex]) {|str| str.match(args[:file_capture_regex]) ? str : ""}
     result.sub!("</head>", "#{args[:replacement_begin_tag]}\n#{all_str_compressed}\n#{args[:replacement_end_tag]}\n</head>")
 
     result
