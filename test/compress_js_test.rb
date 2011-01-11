@@ -19,8 +19,9 @@ describe "js compression" do
     write_file("/tmp/test.html", <<-HTML)
       <html>
         <head>
-          <script src="add.js"></script>
           <meta>A</meta>
+          <script src="add.js"></script>
+          <meta>B</meta>
           <script src="subtract.js"></script>
           <script>
             function doCalculations() {
@@ -34,7 +35,7 @@ describe "js compression" do
       </html>
     HTML
     
-    result = SPAU::compress_and_inline("/tmp/test.html", "/tmp")
+    result = SPAU::compress_and_inline_js("/tmp/test.html", "/tmp")
 
     deny{ result.include?("add.js") }
     deny{ result.include?("subtract.js") }
@@ -43,23 +44,34 @@ describe "js compression" do
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
-    assert{ result.include?("<meta>A</meta>") }
+    assert{ result.gsub(/\s+/, "").include?("<meta>A</meta><meta>B</meta>") }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
+
+        puts %{
+
+
+COMPRESSED JS FROM JS SCRIPT FILES:
+#{result}
+
+
+        }
+
   end
   
   it "compresses js code from script tags" do
     write_file("/tmp/test.html", <<-HTML)
       <html>
         <head>
+          <meta>A</meta>
           <script>
             function addNumbers(x, y) {
               var OH_HEY_IM_NOT_USED = 1;
               return x + y;
             }
           </script>
-          <meta>A</meta>
+          <meta>B</meta>
           <script>
             function subtractNumbers(y, x) {
               return y - x;
@@ -78,15 +90,25 @@ describe "js compression" do
       </html>
     HTML
     
-    result = SPAU::compress_and_inline("/tmp/test.html", "/tmp")
+    result = SPAU::compress_and_inline_js("/tmp/test.html", "/tmp")
 
     assert{ result.include?("addNumbers") }
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
-    assert{ result.include?("<meta>A</meta>") }
+    assert{ result.gsub(/\s+/, "").include?("<meta>A</meta><meta>B</meta>") }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
+    
+        puts %{
+
+
+COMPRESSED JS FROM INLINE SCRIPTS:
+#{result}
+
+
+        }
+
   end
 end
