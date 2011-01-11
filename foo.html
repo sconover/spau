@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="user-scalable=no, device-width=320px, maximum-scale=1.0">
+    <title>AskMe TEST App</title>
+	  
+	  <link rel="stylesheet" type="text/css" media="all" href="css/oocss/libraries.css" />
+	  <link rel="stylesheet" type="text/css" media="all" href="css/oocss/grids.css" />
+	  <link rel="stylesheet" type="text/css" media="all" href="css/oocss/content.css" />
+	  <link rel="stylesheet" type="text/css" media="all" href="css/oocss/heading.css" />
+	  
+	  <link rel="stylesheet" type="text/css" media="all" href="css/advice.css" />
+ 
+    	  
+	  
+	  <script>
+	  function xxxxxxxxxxxxxxxxxxxx(){}
+	  alert(xxxxxxxxxxxxxxxxxxxx())
+	  </script>
+	  
+  	<script>
+  	  global = window
+  	  Jbob.htmlTags(_)
+  	  
+  	  BUILD_NUMBER = 999
+      BROWSER_MODE = window.location.href.indexOf("http://")>=0
+      TEST_MODE = window.location.href.indexOf("file://")>=0 && window.location.href.indexOf("harmony")>=0
+        	  
+      function init() {
+        $(document).ajaxError(function(theEvent, request, options, error){
+          Server.report([[
+            ["event", "bad_ajax_request"],
+            ["method", options.type],
+            ["url", options.url],
+            ["data", JSON.stringify(options.data)] 
+          ]])
+        })
+
+        AndroidButtons.init()
+
+        if (getCookie("filledOutProfile")=="true") {
+          UI.moveForwardTo('results')
+        } else {
+          UI.display('profile')
+        }
+        
+        LocalData.refreshGroups()
+        LocalData.refreshPeopleRecentlyTexted()        
+      }
+      
+      var loadFunction = init
+      
+  	  if (BROWSER_MODE) {  
+  	    var originalInit = init
+        $.getScript('../browser.js', function() {
+          console.log('loaded browser.js')
+        })
+        loadFunction = function(){setTimeout(function(){init()}, 250)}
+  	  }
+
+      if (BROWSER_MODE || TEST_MODE) BackButton = {override:function(){}}
+
+      function onLoad(){
+        if (BROWSER_MODE || TEST_MODE) { 
+          loadFunction()
+        } else {
+          document.addEventListener("deviceready", loadFunction, false);
+        }
+      }
+      
+  	</script>
+
+
+    <script src="android.js"></script>	  
+    <script src="android_buttons.js"></script>	  
+    <script src="content_resolver.js"></script>	  
+    <script src="logging.js"></script>	  
+    <script src="server.js"></script>	  
+    <script src="local_data.js"></script>	  
+    <script src="ui.js"></script>
+    <script src="alert.js"></script>
+
+    <script src="views/app_not_enabled.js"></script>	  
+    <script src="views/general.js"></script>	  
+    <script src="views/question_related.js"></script>	  
+    
+    <script src="widgets/toggle_list.js"></script>	  
+    <script src="widgets/contact_chooser.js"></script>	  
+    
+    <script src="pages/question_compose.js"></script>	  
+    <script src="pages/results.js"></script>	  
+    <script src="pages/question_detail.js"></script>	  
+    <script src="pages/profile.js"></script>	  
+    <script src="pages/feedback.js"></script>	  
+    <script src="pages/sizes.js"></script>	  
+    <script src="pages/log.js"></script>	  
+
+    
+  </head>
+  
+  <body onload="onLoad()">
+    <div class="page">
+      <div id="main" style="height:100%;width:100%;"></div>
+      <div id="debug"></div>
+    </div>
+  </body>
+</html>

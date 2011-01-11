@@ -19,9 +19,9 @@ describe "js compression" do
     write_file("/tmp/test.html", <<-HTML)
       <html>
         <head>
-          <meta>A</meta>
+          <meta name="A" content="A">
           <script src="add.js"></script>
-          <meta>B</meta>
+          <meta name="B" content="B"/>
           <script src="subtract.js"></script>
           <script>
             function doCalculations() {
@@ -44,7 +44,7 @@ describe "js compression" do
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
-    assert{ result.gsub(/\s+/, "").include?("<meta>A</meta><meta>B</meta>") }
+    assert{ result.include?('<meta name="A" content="A">') }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
@@ -77,9 +77,9 @@ COMPRESSED JS FROM JS SCRIPT FILES:
       write_file("/tmp/test.html", <<-HTML)
         <html>
           <head>
-            <meta>A</meta>
+            <meta name="A" content="A">
             <script src="add.js"></script>
-            <meta>B</meta>
+            <meta name="B" content="B"/>
             <script src="subtract.js"></script>
             <script>
               function doCalculations() {
@@ -102,7 +102,7 @@ COMPRESSED JS FROM JS SCRIPT FILES:
       assert{ result.include?("subtractNumbers") }
       deny{ result.include?("OH_HEY_IM_NOT_USED") }
 
-      assert{ result.gsub(/\s+/, "").include?("<meta>A</meta><meta>B</meta>") }
+      assert{ result.include?('<meta name="A" content="A">') }
       assert{ result.include?("<b>Hi I'm Html</b>") }
 
       assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
@@ -134,9 +134,9 @@ COMPRESSED JS FROM JS SCRIPT FILES:
       write_file("/tmp/test.html", <<-HTML)
         <html>
           <head>
-            <meta>A</meta>
+            <meta name="A" content="A">
             <script src="add.js"></script>
-            <meta>B</meta>
+            <meta name="B" content="B"/>
             <script src="subtract.js"></script>
             <script>
               function doCalculations() {
@@ -172,14 +172,19 @@ COMPRESSED JS FROM JS SCRIPT FILES, WITH A FILE EXCLUDED:
     write_file("/tmp/test.html", <<-HTML)
       <html>
         <head>
-          <meta>A</meta>
+          <meta name="A" content="A">
+          
           <script>
+          
             function addNumbers(x, y) {
               var OH_HEY_IM_NOT_USED = 1;
               return x + y;
             }
           </script>
-          <meta>B</meta>
+          
+          
+          <meta name="B" content="B"/>
+          
           <script>
             function subtractNumbers(y, x) {
               return y - x;
@@ -191,6 +196,8 @@ COMPRESSED JS FROM JS SCRIPT FILES, WITH A FILE EXCLUDED:
               return subtractNumbers(addNumbers(7, 5), 3)
             }
           </script>
+          
+          
         </head>
         <body>
           <b>Hi I'm Html</b>
@@ -204,7 +211,7 @@ COMPRESSED JS FROM JS SCRIPT FILES, WITH A FILE EXCLUDED:
     assert{ result.include?("subtractNumbers") }
     deny{ result.include?("OH_HEY_IM_NOT_USED") }
     
-    assert{ result.gsub(/\s+/, "").include?("<meta>A</meta><meta>B</meta>") }
+    assert{ result.include?('<meta name="A" content="A">') }
     assert{ result.include?("<b>Hi I'm Html</b>") }
 
     assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
@@ -219,4 +226,65 @@ COMPRESSED JS FROM INLINE SCRIPTS:
         }
 
   end
+  
+  
+    it "works with mixed file and script tags" do
+      write_file("/tmp/add.js", <<-JAVASCRIPT)
+        function addNumbers(x, y) {
+          var OH_HEY_IM_NOT_USED = 1;
+          return x + y;
+        }
+      JAVASCRIPT
+
+
+      write_file("/tmp/test.html", <<-HTML)
+        <html>
+          <head>
+            <meta name="A" content="A">
+
+            <script src="add.js"></script>
+
+            <meta name="B" content="B"/>
+
+            <script>
+              function subtractNumbers(y, x) {
+                return y - x;
+              }
+            </script>
+
+            <script>
+              function doCalculations() {
+                return subtractNumbers(addNumbers(7, 5), 3)
+              }
+            </script>
+
+
+          </head>
+          <body>
+            <b>Hi I'm Html</b>
+          <body>
+        </html>
+      HTML
+
+      result = SPAU::compress_and_inline_js("/tmp/test.html", "/tmp")
+
+      assert{ result.include?("addNumbers") }
+      assert{ result.include?("subtractNumbers") }
+      deny{ result.include?("OH_HEY_IM_NOT_USED") }
+
+      assert{ result.include?('<meta name="A" content="A">') }
+      assert{ result.include?("<b>Hi I'm Html</b>") }
+
+      assert{ Harmony::Page.new(result).execute_js("doCalculations()") == 9 }
+
+          puts %{
+
+
+  COMPRESSED JS FROM INLINE SCRIPTS:
+  #{result}
+
+
+          }
+
+    end
 end

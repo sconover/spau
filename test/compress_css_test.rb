@@ -18,7 +18,7 @@ describe "css compression" do
       <html>
         <head>
           <link rel="stylesheet" type="text/css" media="all" href="red.css" />
-          <meta>A</meta>
+          <meta name="A" content="A">
           <link rel="stylesheet" type="text/css" media="all" href="blue.css" />
         </head>
         <body>
@@ -40,7 +40,7 @@ describe "css compression" do
     
     deny{ result.include?("<link") }
     
-    assert{ result.include?("<meta>A</meta>") }
+    assert{ result.include?('<meta name="A" content="A">') }
     assert{ result.include?("<b>Hi I'm Html</b>") }
     
     #can't get computed style in harmony/johnson
@@ -61,7 +61,7 @@ COMPRESSED CSS FROM CSS FILES:
           <style type='text/css'>
             .red{background-color:red;}
           </style>
-          <meta>A</meta>
+          <meta name="A" content="A">
           <style type='text/css'>
             /*
             HERE'S A COMMENT
@@ -83,7 +83,7 @@ COMPRESSED CSS FROM CSS FILES:
     assert{ result.include?("background-color:blue") }
     deny{ result.include?("HERE'S A COMMENT") }
     
-    assert{ result.include?("<meta>A</meta>") }
+    assert{ result.include?('<meta name="A" content="A">') }
     assert{ result.include?("<b>Hi I'm Html</b>") }  
     
     puts %{
