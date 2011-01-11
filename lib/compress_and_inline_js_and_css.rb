@@ -6,15 +6,15 @@ require "fileutils"
 module SPAU
   YUI_COMPRESSOR_PATH = File.join(File.dirname(__FILE__), "..", "yuicompressor.jar")
   
-  def self.compress_and_inline_js_and_css!(html_file, base_dir=".", files_to_exclude=[])
+  def self.compress_and_inline_js_and_css!(html_file, base_dir=".", files_to_exclude=[], compress_js=true)
     File.open(html_file + ".tmp", "w"){|f|f << compress_and_inline_css(html_file, base_dir)}
     FileUtils.mv(html_file + ".tmp", html_file)
 
-    File.open(html_file + ".tmp", "w"){|f|f << compress_and_inline_js(html_file, base_dir, files_to_exclude)}
+    File.open(html_file + ".tmp", "w"){|f|f << compress_and_inline_js(html_file, base_dir, files_to_exclude, compress_js)}
     FileUtils.mv(html_file + ".tmp", html_file)
   end
   
-  def self.compress_and_inline_js(html_file, base_dir=".", files_to_exclude=[])
+  def self.compress_and_inline_js(html_file, base_dir=".", files_to_exclude=[], compress=true)
     html = File.read(html_file)
     compress_and_inline_type(
       :type => "js",
@@ -23,7 +23,8 @@ module SPAU
       :files_to_exclude => files_to_exclude,
       :file_tag_name => "script",
       :file_attr => "src",
-      :inline_tag_name => "script"
+      :inline_tag_name => "script",
+      :compress => compress
     )
   end
   
@@ -36,7 +37,8 @@ module SPAU
       :files_to_exclude => [],
       :file_tag_name => "link",
       :file_attr => "href",
-      :inline_tag_name => "style"
+      :inline_tag_name => "style",
+      :compress => true
     )
   end
   
@@ -64,14 +66,15 @@ module SPAU
       
       result = doc.to_html
     end
-
-    File.open("/tmp/temp_all.#{args[:type]}", "w"){|f|f<<all_str}
-    compress("/tmp/temp_all.#{args[:type]}", "/tmp/temp_all_min.#{args[:type]}", args[:type])
     
-    all_str_compressed = File.read("/tmp/temp_all_min.#{args[:type]}")
-
+    if (args[:compress])
+      File.open("/tmp/temp_all.#{args[:type]}", "w"){|f|f<<all_str}
+      compress("/tmp/temp_all.#{args[:type]}", "/tmp/temp_all_min.#{args[:type]}", args[:type])
     
-    result.sub!("</head>", "<#{args[:inline_tag_name]}>\n#{all_str_compressed}\n</#{args[:inline_tag_name]}>\n</head>")
+      all_str = File.read("/tmp/temp_all_min.#{args[:type]}")
+    end
+    
+    result.sub!("</head>", "<#{args[:inline_tag_name]}>\n#{all_str}\n</#{args[:inline_tag_name]}>\n</head>")
     result
   end
   
